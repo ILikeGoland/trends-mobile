@@ -291,7 +291,7 @@
         const seen = new Set(), allItems = [], sourcesUsed = [];
         for (const [name, url] of FALLBACK_FEEDS) {
             try {
-                const items = parseFallbackRSS(await fetchDirect(url));
+                const items = parseFallbackRSS(await fetchViaWorker(url));
                 if (items.length) sourcesUsed.push(name);
                 for (const it of items) { const k = it.original.toLowerCase(); if (!seen.has(k)) { seen.add(k); allItems.push(it); } }
                 if (allItems.length >= limit) break;
@@ -300,8 +300,18 @@
         return { items: allItems.slice(0, limit), source: sourcesUsed.length ? sourcesUsed.join(' + ') : 'Fallback RSS' };
     }
 
+    async function fetchBatched(fn, items, batchSize) {
+        const results = [];
+        for (let i = 0; i < items.length; i += batchSize) {
+            const batch = items.slice(i, i + batchSize);
+            const batchResults = await Promise.allSettled(batch.map(fn));
+            results.push(...batchResults);
+        }
+        return results;
+    }
+
     async function fetchTrendingQueries(days, translate) {
-        const geoResults = await Promise.allSettled(TOP_20.map(g => fetchGeoTrending(g, days)));
+        const geoResults = await fetchBatched(g => fetchGeoTrending(g, days), TOP_20, 4);
         const geoItems = {};
         let total = 0;
         geoResults.forEach((r, i) => { const items = r.status === 'fulfilled' ? r.value : []; geoItems[TOP_20[i]] = items; total += items.length; });
@@ -331,7 +341,7 @@
     }
 
     async function fetchTrendingNews(translate) {
-        const geoResults = await Promise.allSettled(TOP_20.map(g => fetchGeoNews(g)));
+        const geoResults = await fetchBatched(g => fetchGeoNews(g), TOP_20, 4);
         const geoItems = {};
         let total = 0;
         geoResults.forEach((r, i) => { const items = r.status === 'fulfilled' ? r.value : []; geoItems[TOP_20[i]] = items; total += items.length; });
