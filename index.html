@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <title>Trends Cluster</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155', 600: '#475569' },
+                        accent: { DEFAULT: '#3b82f6', light: '#60a5fa', dark: '#2563eb' },
+                        success: '#22c55e',
+                        warn: '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { overscroll-behavior: none; }
+        .safe-top { padding-top: env(safe-area-inset-top); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        .tab-active { color: #3b82f6; border-color: #3b82f6; }
+        .tab-inactive { color: #94a3b8; border-color: transparent; }
+        .fade-in { animation: fadeIn 0.2s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .spinner { border: 3px solid #334155; border-top-color: #3b82f6; border-radius: 50%; width: 28px; height: 28px; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        ::-webkit-scrollbar { width: 0; }
+        .topic-row:active { background: #1e293b; }
+        .chip { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
+    </style>
+</head>
+<body class="bg-dark-900 text-slate-200 font-sans min-h-screen flex flex-col safe-top">
+    <!-- Header -->
+    <header class="bg-dark-800 border-b border-dark-700 px-4 py-3 flex items-center justify-between shrink-0">
+        <h1 class="text-lg font-bold text-accent-light tracking-tight">Trends Cluster</h1>
+        <div id="statusBadge" class="text-xs text-slate-400 hidden"></div>
+    </header>
+
+    <!-- Controls Bar -->
+    <div class="bg-dark-800 border-b border-dark-700 px-4 py-2 shrink-0">
+        <div class="flex items-center gap-3 flex-wrap">
+            <!-- Data Type -->
+            <div class="flex bg-dark-700 rounded-lg p-0.5">
+                <button id="btnQueries" onclick="setDataType('queries')" class="px-3 py-1 text-xs font-semibold rounded-md bg-accent text-white transition-all">Queries</button>
+                <button id="btnNews" onclick="setDataType('news')" class="px-3 py-1 text-xs font-semibold rounded-md text-slate-400 transition-all">News</button>
+            </div>
+
+            <!-- Period -->
+            <select id="periodSelect" onchange="onPeriodChange()" class="bg-dark-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 border border-dark-600 focus:outline-none focus:border-accent">
+                <option value="1">Today</option>
+                <option value="3">3 Days</option>
+                <option value="7">Week</option>
+            </select>
+
+            <!-- Translate -->
+            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                <input type="checkbox" id="translateCheck" class="w-4 h-4 rounded border-dark-600 text-accent focus:ring-accent bg-dark-700">
+                <span class="text-xs text-slate-300 font-medium whitespace-nowrap">Translate to Russian</span>
+            </label>
+
+            <!-- Refresh -->
+            <button id="refreshBtn" onclick="refresh()" class="ml-auto flex items-center gap-1.5 bg-accent hover:bg-accent-dark text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Refresh
+            </button>
+        </div>
+        <!-- Info Row -->
+        <div id="infoRow" class="mt-2 text-xs text-slate-500 flex items-center gap-2 flex-wrap">
+            <span id="statsText"></span>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-dark-900/80 flex flex-col items-center justify-center z-50">
+        <div class="spinner mb-3"></div>
+        <p id="loadingText" class="text-sm text-slate-400">Fetching trends...</p>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-hidden flex flex-col">
+        <!-- Tab: Topics Table -->
+        <div id="tabTable" class="flex-1 overflow-y-auto fade-in">
+            <div id="topicList" class="divide-y divide-dark-700"></div>
+            <div id="emptyState" class="flex flex-col items-center justify-center py-20 text-slate-500">
+                <svg class="w-12 h-12 mb-3 text-dark-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <p class="text-sm">Tap Refresh to load trends</p>
+            </div>
+        </div>
+
+        <!-- Tab: Topic Details -->
+        <div id="tabDetails" class="flex-1 overflow-y-auto hidden fade-in">
+            <div id="detailContent" class="p-4">
+                <div class="flex flex-col items-center justify-center py-20 text-slate-500">
+                    <svg class="w-12 h-12 mb-3 text-dark-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+                    <p class="text-sm">Select a topic from the list</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Tab Bar -->
+    <nav class="bg-dark-800 border-t border-dark-700 flex shrink-0 safe-bottom">
+        <button onclick="switchTab('table')" id="tabBtnTable" class="flex-1 flex flex-col items-center py-2 tab-active border-t-2 transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span class="text-[10px] mt-0.5 font-medium">Topics</span>
+        </button>
+        <button onclick="switchTab('details')" id="tabBtnDetails" class="flex-1 flex flex-col items-center py-2 tab-inactive border-t-2 transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="text-[10px] mt-0.5 font-medium">Details</span>
+        </button>
+    </nav>
+
+    <script src="app.js"></script>
+</body>
+</html>
