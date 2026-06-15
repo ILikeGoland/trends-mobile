@@ -20,7 +20,7 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-    if (e.request.url.includes('corsproxy.io') || e.request.url.includes('codetabs.com') || e.request.url.includes('allorigins') || e.request.url.includes('translate.googleapis')) {
+    if (e.request.url.includes('translate.googleapis') || e.request.url.includes('workers.dev')) {
         return;
     }
     e.respondWith(

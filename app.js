@@ -2,11 +2,9 @@
     'use strict';
 
     // ─── Constants ───────────────────────────────────────────────────────
-    const PROXIES = [
-        (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-        (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-        (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    ];
+    // Замени WORKER_URL на адрес своего Cloudflare Worker после деплоя
+    let WORKER_URL = localStorage.getItem('worker_url') || '';
+
     const GTRANSLATE = 'https://translate.googleapis.com/translate_a/single';
     const BATCH_SEP = '\n';
     const BATCH_MAX_CHARS = 800;
@@ -142,20 +140,34 @@
         return items;
     }
 
-    // ─── Fetch with proxy (fallback chain) ──────────────────────────────
+    // ─── Fetch helpers ───────────────────────────────────────────────────
+    const RUSSIAN_HOSTS = ['newssearch.yandex.ru', 'dzen.ru', 'news.mail.ru'];
+
+    function isRussianFeed(url) {
+        return RUSSIAN_HOSTS.some(h => url.includes(h));
+    }
+
+    async function fetchViaWorker(url) {
+        if (!WORKER_URL) throw new Error('Worker not configured');
+        const sep = WORKER_URL.includes('?') ? '&' : '?';
+        const resp = await fetch(`${WORKER_URL}${sep}url=${encodeURIComponent(url)}`, {
+            signal: AbortSignal.timeout(10000),
+        });
+        if (!resp.ok) throw new Error(`Worker HTTP ${resp.status}`);
+        return await resp.text();
+    }
+
+    async function fetchDirect(url) {
+        const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return await resp.text();
+    }
+
     async function fetchWithProxy(url) {
-        let lastErr;
-        for (const makeUrl of PROXIES) {
-            try {
-                const resp = await fetch(makeUrl(url), { signal: AbortSignal.timeout(8000) });
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                return await resp.text();
-            } catch (e) {
-                lastErr = e;
-                continue;
-            }
+        if (isRussianFeed(url)) {
+            try { return await fetchDirect(url); } catch {}
         }
-        throw lastErr || new Error('All proxies failed');
+        return fetchViaWorker(url);
     }
 
     // ─── Translation (Google Translate API — no CORS) ───────────────────
@@ -576,6 +588,11 @@
 
     // ─── Main refresh ───────────────────────────────────────────────────
     window.refresh = async function () {
+        if (!WORKER_URL) {
+            openSettings();
+            return;
+        }
+
         refreshBtn.disabled = true;
         refreshBtn.classList.add('opacity-50');
         showLoading(dataType === 'queries' ? 'Fetching trending queries...' : 'Fetching trending news...');
@@ -637,6 +654,23 @@
             if (selectedTopicIdx >= 0) renderDetail(selectedTopicIdx);
         }
     });
+
+    // ─── Settings ───────────────────────────────────────────────────────
+    window.openSettings = function () {
+        $('#workerUrlInput').value = WORKER_URL;
+        $('#settingsModal').classList.remove('hidden');
+    };
+
+    window.closeSettings = function () {
+        $('#settingsModal').classList.add('hidden');
+    };
+
+    window.saveSettings = function () {
+        const val = $('#workerUrlInput').value.trim().replace(/\/+$/, '');
+        WORKER_URL = val;
+        localStorage.setItem('worker_url', val);
+        closeSettings();
+    };
 
     // ─── PWA: Register service worker ──────────────────────────────────
     if ('serviceWorker' in navigator) {
