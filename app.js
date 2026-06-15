@@ -108,7 +108,10 @@
     async function fetchViaWorker(url) {
         if (!WORKER_URL) throw new Error('Worker not configured');
         const sep = WORKER_URL.includes('?') ? '&' : '?';
-        const resp = await fetch(WORKER_URL + sep + 'url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(10000) });
+        const fullUrl = WORKER_URL + sep + 'url=' + encodeURIComponent(url);
+        console.log('[v7] fetchViaWorker:', fullUrl);
+        const resp = await fetch(fullUrl, { signal: AbortSignal.timeout(10000) });
+        console.log('[v7] worker response:', resp.status, url);
         if (!resp.ok) throw new Error('Worker HTTP ' + resp.status);
         return await resp.text();
     }
@@ -381,6 +384,7 @@
 
     // ─── Refresh ────────────────────────────────────────────────────────
     async function doRefresh() {
+        console.log('[v7] doRefresh called, WORKER_URL=', WORKER_URL);
         if (!WORKER_URL) { openSettings(); return; }
 
         refreshBtn.disabled = true;
@@ -435,10 +439,11 @@
     }
 
     // ─── Settings ───────────────────────────────────────────────────────
-    function openSettings() { workerUrlInput.value = WORKER_URL; settingsModal.classList.remove('hidden'); }
-    function closeSettings() { settingsModal.classList.add('hidden'); }
+    function openSettings() { console.log('[v7] openSettings, WORKER_URL=', WORKER_URL); workerUrlInput.value = WORKER_URL; settingsModal.classList.remove('hidden'); }
+    function closeSettings() { console.log('[v7] closeSettings'); settingsModal.classList.add('hidden'); }
     function saveSettings() {
         const val = workerUrlInput.value.trim().replace(/\/+$/, '');
+        console.log('[v7] saveSettings, val=', val);
         WORKER_URL = val;
         localStorage.setItem('worker_url', val);
         closeSettings();
@@ -459,5 +464,14 @@
     translateCheck.addEventListener('change', function () { if (allTopics.length) { renderTopics(); if (selectedTopicIdx >= 0) renderDetail(selectedTopicIdx); } });
 
     // ─── PWA ────────────────────────────────────────────────────────────
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function(){}); }
+    // Отключаем старый SW, чтобы браузер не раздавал кэшированный мусор
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.unregister(); });
+        });
+    }
+    // Очищаем всё кэшированное
+    if ('caches' in window) {
+        caches.keys().then(function (names) { names.forEach(function (n) { caches.delete(n); }); });
+    }
 })();
