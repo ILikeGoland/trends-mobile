@@ -32,96 +32,121 @@
         .tab-inactive { color: #94a3b8; border-color: transparent; }
         .fade-in { animation: fadeIn 0.2s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-        .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         .spinner { border: 3px solid #334155; border-top-color: #3b82f6; border-radius: 50%; width: 28px; height: 28px; animation: spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         ::-webkit-scrollbar { width: 0; }
         .topic-row:active { background: #1e293b; }
-        .chip { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
+        .chip { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
     </style>
 </head>
-<body class="bg-dark-900 text-slate-200 font-sans min-h-screen flex flex-col safe-top">
+<body class="bg-dark-900 text-slate-200 min-h-screen flex flex-col safe-top" style="font-family: system-ui, -apple-system, sans-serif;">
+
     <!-- Header -->
     <header class="bg-dark-800 border-b border-dark-700 px-4 py-3 flex items-center justify-between shrink-0">
-        <h1 class="text-lg font-bold text-accent-light tracking-tight">Trends Cluster</h1>
-        <div id="statusBadge" class="text-xs text-slate-400 hidden"></div>
+        <h1 class="text-lg font-bold text-accent-light" style="letter-spacing:-0.02em;">Trends Cluster</h1>
+        <div class="flex items-center gap-3">
+            <span id="statusBadge" class="text-xs text-slate-400 hidden"></span>
+            <button id="settingsBtn" style="background:none;border:none;cursor:pointer;padding:4px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </button>
+        </div>
     </header>
 
     <!-- Controls Bar -->
     <div class="bg-dark-800 border-b border-dark-700 px-4 py-2 shrink-0">
-        <div class="flex items-center gap-3 flex-wrap">
-            <!-- Data Type -->
-            <div class="flex bg-dark-700 rounded-lg p-0.5">
-                <button id="btnQueries" onclick="setDataType('queries')" class="px-3 py-1 text-xs font-semibold rounded-md bg-accent text-white transition-all">Queries</button>
-                <button id="btnNews" onclick="setDataType('news')" class="px-3 py-1 text-xs font-semibold rounded-md text-slate-400 transition-all">News</button>
+        <div class="flex items-center gap-2 flex-wrap">
+            <div class="flex bg-dark-700 rounded-lg" style="padding:2px;">
+                <button id="btnQueries" onclick="setDataType('queries')" style="padding:4px 10px;font-size:12px;font-weight:600;border:none;border-radius:6px;cursor:pointer;" class="bg-accent text-white">Queries</button>
+                <button id="btnNews" onclick="setDataType('news')" style="padding:4px 10px;font-size:12px;font-weight:600;border:none;border-radius:6px;cursor:pointer;" class="bg-dark-700 text-slate-400">News</button>
             </div>
 
-            <!-- Period -->
-            <select id="periodSelect" onchange="onPeriodChange()" class="bg-dark-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 border border-dark-600 focus:outline-none focus:border-accent">
+            <select id="periodSelect" style="background:#334155;color:#e2e8f0;font-size:12px;border-radius:8px;padding:4px 8px;border:1px solid #475569;">
                 <option value="1">Today</option>
                 <option value="3">3 Days</option>
                 <option value="7">Week</option>
             </select>
 
-            <!-- Translate -->
-            <label class="flex items-center gap-1.5 cursor-pointer select-none">
-                <input type="checkbox" id="translateCheck" class="w-4 h-4 rounded border-dark-600 text-accent focus:ring-accent bg-dark-700">
-                <span class="text-xs text-slate-300 font-medium whitespace-nowrap">Translate to Russian</span>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;">
+                <input type="checkbox" id="translateCheck" style="width:16px;height:16px;">
+                <span style="font-size:12px;color:#cbd5e1;font-weight:500;white-space:nowrap;">Translate to Russian</span>
             </label>
 
-            <!-- Refresh -->
-            <button id="refreshBtn" onclick="refresh()" class="ml-auto flex items-center gap-1.5 bg-accent hover:bg-accent-dark text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <button id="refreshBtn" onclick="refresh()" style="margin-left:auto;display:flex;align-items:center;gap:6px;background:#3b82f6;color:white;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;border:none;cursor:pointer;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 Refresh
             </button>
         </div>
-        <!-- Info Row -->
-        <div id="infoRow" class="mt-2 text-xs text-slate-500 flex items-center gap-2 flex-wrap">
+        <div id="infoRow" style="margin-top:6px;font-size:12px;color:#64748b;">
             <span id="statsText"></span>
         </div>
     </div>
 
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="hidden fixed inset-0 bg-dark-900/80 flex flex-col items-center justify-center z-50">
-        <div class="spinner mb-3"></div>
-        <p id="loadingText" class="text-sm text-slate-400">Fetching trends...</p>
+    <div id="loadingOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(15,23,42,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;">
+        <div class="spinner" style="margin-bottom:12px;"></div>
+        <p id="loadingText" style="font-size:14px;color:#94a3b8;">Fetching trends...</p>
     </div>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 overflow-hidden flex flex-col">
-        <!-- Tab: Topics Table -->
-        <div id="tabTable" class="flex-1 overflow-y-auto fade-in">
-            <div id="topicList" class="divide-y divide-dark-700"></div>
-            <div id="emptyState" class="flex flex-col items-center justify-center py-20 text-slate-500">
-                <svg class="w-12 h-12 mb-3 text-dark-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                <p class="text-sm">Tap Refresh to load trends</p>
+    <!-- Main Content -->
+    <main style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+        <div id="tabTable" style="flex:1;overflow-y:auto;" class="fade-in">
+            <div id="topicList"></div>
+            <div id="emptyState" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:#64748b;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.5" style="margin-bottom:12px;"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <p style="font-size:14px;">Tap Refresh to load trends</p>
             </div>
         </div>
 
-        <!-- Tab: Topic Details -->
-        <div id="tabDetails" class="flex-1 overflow-y-auto hidden fade-in">
-            <div id="detailContent" class="p-4">
-                <div class="flex flex-col items-center justify-center py-20 text-slate-500">
-                    <svg class="w-12 h-12 mb-3 text-dark-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
-                    <p class="text-sm">Select a topic from the list</p>
+        <div id="tabDetails" style="flex:1;overflow-y:auto;display:none;" class="fade-in">
+            <div id="detailContent" style="padding:16px;">
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:#64748b;">
+                    <p style="font-size:14px;">Select a topic from the list</p>
                 </div>
             </div>
         </div>
     </main>
 
     <!-- Bottom Tab Bar -->
-    <nav class="bg-dark-800 border-t border-dark-700 flex shrink-0 safe-bottom">
-        <button onclick="switchTab('table')" id="tabBtnTable" class="flex-1 flex flex-col items-center py-2 tab-active border-t-2 transition-all">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-            <span class="text-[10px] mt-0.5 font-medium">Topics</span>
+    <nav style="background:#1e293b;border-top:1px solid #334155;display:flex;flex-shrink:0;" class="safe-bottom">
+        <button onclick="switchTab('table')" id="tabBtnTable" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:8px;border:none;background:none;cursor:pointer;" class="tab-active">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span style="font-size:10px;margin-top:2px;font-weight:500;">Topics</span>
         </button>
-        <button onclick="switchTab('details')" id="tabBtnDetails" class="flex-1 flex flex-col items-center py-2 tab-inactive border-t-2 transition-all">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <span class="text-[10px] mt-0.5 font-medium">Details</span>
+        <button onclick="switchTab('details')" id="tabBtnDetails" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:8px;border:none;background:none;cursor:pointer;" class="tab-inactive">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span style="font-size:10px;margin-top:2px;font-weight:500;">Details</span>
         </button>
     </nav>
 
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;justify-content:center;z-index:100;">
+        <div style="background:#1e293b;border-radius:16px 16px 0 0;width:100%;max-width:480px;padding:20px 20px 32px 20px;" class="safe-bottom">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                <h2 style="font-size:16px;font-weight:700;color:#e2e8f0;margin:0;">Settings</h2>
+                <button onclick="closeSettings()" style="background:none;border:none;cursor:pointer;padding:4px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <label style="display:block;margin-bottom:12px;">
+                <span style="font-size:12px;color:#94a3b8;font-weight:500;display:block;margin-bottom:4px;">Cloudflare Worker URL</span>
+                <input type="url" id="workerUrlInput" placeholder="https://your-worker.workers.dev"
+                    style="width:100%;background:#334155;color:#e2e8f0;font-size:14px;border-radius:8px;padding:10px 12px;border:1px solid #475569;box-sizing:border-box;outline:none;">
+                <span style="font-size:11px;color:#64748b;margin-top:4px;display:block;">Deploy worker from worker.js, paste URL here, press Save.</span>
+            </label>
+            <button onclick="saveSettings()" style="width:100%;background:#3b82f6;color:white;font-size:14px;font-weight:700;padding:12px;border:none;border-radius:8px;cursor:pointer;">
+                Save
+            </button>
+        </div>
+    </div>
+
     <script src="app.js"></script>
+    <script>
+        document.getElementById('settingsBtn').addEventListener('click', function() {
+            if (typeof openSettings === 'function') openSettings();
+        });
+    </script>
 </body>
 </html>
