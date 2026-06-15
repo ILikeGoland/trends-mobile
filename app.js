@@ -143,16 +143,26 @@
         if (start < texts.length) batches.push([start, texts.length]);
         for (const [s, e] of batches) {
             const joined = texts.slice(s, e).join(BATCH_SEP);
+            const translateUrl = GTRANSLATE + '?client=gtx&sl=auto&tl=ru&dt=t&q=' + encodeURIComponent(joined);
             try {
-                const resp = await fetch(GTRANSLATE + '?client=gtx&sl=auto&tl=ru&dt=t&q=' + encodeURIComponent(joined));
-                if (!resp.ok) continue;
-                const data = await resp.json();
-                const translated = data[0].map(p => p[0]).join('');
+                let data;
+                if (WORKER_URL) {
+                    const sep = WORKER_URL.includes('?') ? '&' : '?';
+                    const resp = await fetch(WORKER_URL + sep + 'url=' + encodeURIComponent(translateUrl), { signal: AbortSignal.timeout(10000) });
+                    if (!resp.ok) continue;
+                    data = await resp.json();
+                } else {
+                    const resp = await fetch(translateUrl, { signal: AbortSignal.timeout(10000) });
+                    if (!resp.ok) continue;
+                    data = await resp.json();
+                }
+                if (!data || !data[0]) continue;
+                const translated = data[0].map(function (p) { return p[0]; }).join('');
                 const parts = translated.split('\n');
                 for (let j = 0; j < (e - s); j++) {
                     if (j < parts.length && parts[j].trim()) results[s + j] = parts[j].trim();
                 }
-            } catch (err) { console.warn('Translation failed:', err); }
+            } catch (err) { console.warn('[v7] Translation failed:', err); }
         }
         return results;
     }
