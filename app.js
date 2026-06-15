@@ -136,8 +136,9 @@
             const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
             if (!resp.ok) return text;
             const data = await resp.json();
-            const result = (data.responseData && data.responseData.translatedText) || text;
-            if (result && result.toUpperCase() !== text.toUpperCase()) {
+            if (data.responseStatus && data.responseStatus !== 200) return text;
+            var result = (data.responseData && data.responseData.translatedText) || text;
+            if (result && result.toUpperCase() !== text.toUpperCase() && result.indexOf('INVALID') === -1 && result.indexOf('AUTO') === -1) {
                 translationCache[text] = result;
                 return result;
             }
