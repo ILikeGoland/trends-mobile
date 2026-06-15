@@ -434,6 +434,11 @@
     function hideLoading() {
         loadingOverlay.classList.add('hidden');
     }
+    window.hideLoading = hideLoading;
+
+    loadingOverlay.addEventListener('click', function (e) {
+        if (e.target === loadingOverlay) hideLoading();
+    });
 
     // ─── UI: Render Topics List ─────────────────────────────────────────
     async function renderTopics() {
@@ -597,6 +602,9 @@
         refreshBtn.classList.add('opacity-50');
         showLoading(dataType === 'queries' ? 'Fetching trending queries...' : 'Fetching trending news...');
 
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 30000);
+
         try {
             const translate = translateCheck.checked;
             Object.keys(translationCache).forEach(k => delete translationCache[k]);
@@ -604,9 +612,15 @@
             let result;
             if (dataType === 'queries') {
                 const days = parseInt(periodSelect.value, 10);
-                result = await fetchTrendingQueries(days, translate);
+                result = await Promise.race([
+                    fetchTrendingQueries(days, translate),
+                    new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout: 30s')), 30000)),
+                ]);
             } else {
-                result = await fetchTrendingNews(translate);
+                result = await Promise.race([
+                    fetchTrendingNews(translate),
+                    new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout: 30s')), 30000)),
+                ]);
             }
 
             if (result.topics.length === 0) {
@@ -641,6 +655,7 @@
                 <p class="text-sm text-red-400">Error loading data</p>
                 <p class="text-xs text-slate-600 mt-1">${err.message}</p>`;
         } finally {
+            clearTimeout(timer);
             hideLoading();
             refreshBtn.disabled = false;
             refreshBtn.classList.remove('opacity-50');
@@ -670,6 +685,8 @@
         WORKER_URL = val;
         localStorage.setItem('worker_url', val);
         closeSettings();
+        hideLoading();
+        if (val) refresh();
     };
 
     // ─── PWA: Register service worker ──────────────────────────────────

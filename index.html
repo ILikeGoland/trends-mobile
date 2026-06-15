@@ -88,6 +88,9 @@
     <div id="loadingOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(15,23,42,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;">
         <div class="spinner" style="margin-bottom:12px;"></div>
         <p id="loadingText" style="font-size:14px;color:#94a3b8;">Fetching trends...</p>
+        <button onclick="hideLoading()" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;padding:8px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
     </div>
 
     <!-- Main Content -->

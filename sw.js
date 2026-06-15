@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trends-cluster-v3';
+const CACHE_NAME = 'trends-cluster-v4';
 const PRECACHE = [
     './index.html',
     './app.js',
