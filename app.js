@@ -2,8 +2,11 @@
     'use strict';
 
     // ─── Constants ───────────────────────────────────────────────────────
-    const PROXY = 'https://api.allorigins.win/raw?url=';
-    const GNEWS_PROXY = 'https://api.allorigins.win/raw?url=';
+    const PROXIES = [
+        (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+        (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+        (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    ];
     const GTRANSLATE = 'https://translate.googleapis.com/translate_a/single';
     const BATCH_SEP = '\n';
     const BATCH_MAX_CHARS = 800;
@@ -139,11 +142,20 @@
         return items;
     }
 
-    // ─── Fetch with proxy ───────────────────────────────────────────────
+    // ─── Fetch with proxy (fallback chain) ──────────────────────────────
     async function fetchWithProxy(url) {
-        const resp = await fetch(PROXY + encodeURIComponent(url));
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        return await resp.text();
+        let lastErr;
+        for (const makeUrl of PROXIES) {
+            try {
+                const resp = await fetch(makeUrl(url), { signal: AbortSignal.timeout(8000) });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                return await resp.text();
+            } catch (e) {
+                lastErr = e;
+                continue;
+            }
+        }
+        throw lastErr || new Error('All proxies failed');
     }
 
     // ─── Translation (Google Translate API — no CORS) ───────────────────
