@@ -492,6 +492,9 @@
 
         refreshBtn.disabled = true;
         refreshBtn.style.opacity = '0.5';
+        topicList.innerHTML = '';
+        emptyState.classList.add('hidden');
+        allTopics = [];
         showLoading(dataType === 'queries' ? 'Fetching trending queries...' : 'Fetching trending news...');
 
         try {
@@ -513,6 +516,8 @@
             }
 
             if (!result.topics.length) {
+                allTopics = [];
+                topicList.innerHTML = '';
                 emptyState.classList.remove('hidden');
                 emptyState.innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.5" style="margin-bottom:12px;"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>'
                     + '<p style="font-size:14px;margin:0;">No trends found</p>'
