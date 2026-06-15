@@ -128,87 +128,36 @@
     }
 
     // ─── Translation ─────────────────────────────────────────────────────
-    async function callTranslateAPI(url) {
-        const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const data = await resp.json();
-        if (!data || !data[0]) throw new Error('Bad response');
-        return data[0].map(function (p) { return p[0]; }).join('');
-    }
-
-    async function callMyMemory(texts) {
-        const results = [];
-        for (const text of texts) {
-            try {
-                const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=en|ru';
-                const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
-                if (!resp.ok) { results.push(text); continue; }
-                const data = await resp.json();
-                results.push((data.responseData && data.responseData.translatedText) || text);
-            } catch { results.push(text); }
-        }
-        return results;
+    async function translateSingle(text) {
+        if (!text || hasCyrillic(text)) return text;
+        if (translationCache[text]) return translationCache[text];
+        try {
+            const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=auto|ru';
+            const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+            if (!resp.ok) return text;
+            const data = await resp.json();
+            const result = (data.responseData && data.responseData.translatedText) || text;
+            if (result && result.toUpperCase() !== text.toUpperCase()) {
+                translationCache[text] = result;
+                return result;
+            }
+        } catch (e) { console.warn('[v9] translate error:', e); }
+        return text;
     }
 
     async function translateBatch(texts) {
         if (!texts.length) return texts;
+        const toTranslate = [];
+        const indices = [];
         const results = [...texts];
-        const batches = [];
-        let start = 0, len = 0, count = 0;
         for (let i = 0; i < texts.length; i++) {
-            const chunk = texts[i].length + 1;
-            if ((len + chunk > BATCH_MAX_CHARS || count >= BATCH_MAX_ITEMS) && i > start) {
-                batches.push([start, i]); start = i; len = 0; count = 0;
-            }
-            len += chunk; count++;
+            if (!texts[i] || hasCyrillic(texts[i])) continue;
+            if (translationCache[texts[i]]) { results[i] = translationCache[texts[i]]; }
+            else { toTranslate.push(texts[i]); indices.push(i); }
         }
-        if (start < texts.length) batches.push([start, texts.length]);
-
-        const useWorker = !!WORKER_URL;
-
-        for (const [s, e] of batches) {
-            const joined = texts.slice(s, e).join(BATCH_SEP);
-            const translateUrl = GTRANSLATE + '?client=gtx&sl=auto&tl=ru&dt=t&q=' + encodeURIComponent(joined);
-            let translated = null;
-
-            // Попытка 1: через Worker
-            if (useWorker) {
-                try {
-                    const sep = WORKER_URL.includes('?') ? '&' : '?';
-                    const resp = await fetch(WORKER_URL + sep + 'url=' + encodeURIComponent(translateUrl), { signal: AbortSignal.timeout(8000) });
-                    if (resp.ok) {
-                        const data = await resp.json();
-                        if (data && data[0]) translated = data[0].map(function (p) { return p[0]; }).join('');
-                    }
-                } catch (e) { console.warn('[v8] Worker translate failed:', e); }
-            }
-
-            // Попытка 2: напрямую
-            if (!translated) {
-                try { translated = await callTranslateAPI(translateUrl); }
-                catch (e) { console.warn('[v8] Direct translate failed:', e); }
-            }
-
-            if (translated) {
-                const parts = translated.split('\n');
-                for (let j = 0; j < (e - s); j++) {
-                    if (j < parts.length && parts[j].trim()) results[s + j] = parts[j].trim();
-                }
-            }
-        }
-
-        // Попытка 3: MyMemory для тех, что не перевелись
-        const failedIdx = [];
-        for (let i = 0; i < texts.length; i++) {
-            if (results[i] === texts[i] && texts[i] && !hasCyrillic(texts[i])) failedIdx.push(i);
-        }
-        if (failedIdx.length) {
-            console.warn('[v8] Falling back to MyMemory for', failedIdx.length, 'items');
-            const failedTexts = failedIdx.map(i => texts[i]);
-            const translated = await callMyMemory(failedTexts);
-            failedIdx.forEach((idx, j) => { results[idx] = translated[j]; });
-        }
-
+        if (!toTranslate.length) return results;
+        const translated = await Promise.all(toTranslate.map(t => translateSingle(t)));
+        for (let i = 0; i < indices.length; i++) { results[indices[i]] = translated[i]; }
         return results;
     }
 
