@@ -8,89 +8,89 @@
     <meta name="theme-color" content="#0f172a">
     <title>Trends Cluster</title>
     <link rel="manifest" href="manifest.json">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155', 600: '#475569' },
-                        accent: { DEFAULT: '#3b82f6', light: '#60a5fa', dark: '#2563eb' },
-                        success: '#22c55e',
-                        warn: '#f59e0b',
-                    }
-                }
-            }
-        }
-    </script>
     <style>
-        * { -webkit-tap-highlight-color: transparent; }
-        body { overscroll-behavior: none; }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { overscroll-behavior: none; margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; }
         .safe-top { padding-top: env(safe-area-inset-top); }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-        .tab-active { color: #3b82f6; border-color: #3b82f6; }
-        .tab-inactive { color: #94a3b8; border-color: transparent; }
+        .hidden { display: none !important; }
         .fade-in { animation: fadeIn 0.2s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .spinner { border: 3px solid #334155; border-top-color: #3b82f6; border-radius: 50%; width: 28px; height: 28px; animation: spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         ::-webkit-scrollbar { width: 0; }
-        .topic-row:active { background: #1e293b; }
-        .chip { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+        .btn-blue { background: #3b82f6; color: #fff; border: none; font-weight: 700; cursor: pointer; }
+        .btn-blue:active { opacity: 0.8; }
+        .btn-ghost { background: none; border: none; cursor: pointer; padding: 4px; }
     </style>
 </head>
-<body class="bg-dark-900 text-slate-200 min-h-screen flex flex-col safe-top" style="font-family: system-ui, -apple-system, sans-serif;">
+<body>
 
     <!-- Header -->
-    <header class="bg-dark-800 border-b border-dark-700 px-4 py-3 flex items-center justify-between shrink-0">
-        <h1 class="text-lg font-bold text-accent-light" style="letter-spacing:-0.02em;">Trends Cluster</h1>
-        <div class="flex items-center gap-3">
-            <span id="statusBadge" class="text-xs text-slate-400 hidden"></span>
-            <button id="settingsBtn" style="background:none;border:none;cursor:pointer;padding:4px;">
+    <header style="background:#1e293b;border-bottom:1px solid #334155;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+        <h1 style="font-size:18px;font-weight:700;color:#60a5fa;margin:0;">Trends Cluster</h1>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <span id="statusBadge" class="hidden" style="font-size:12px;color:#94a3b8;"></span>
+            <button id="settingsBtn" class="btn-ghost">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
             </button>
         </div>
     </header>
 
-    <!-- Controls Bar -->
-    <div class="bg-dark-800 border-b border-dark-700 px-4 py-2 shrink-0">
-        <div class="flex items-center gap-2 flex-wrap">
-            <div class="flex bg-dark-700 rounded-lg" style="padding:2px;">
-                <button id="btnQueries" onclick="setDataType('queries')" style="padding:4px 10px;font-size:12px;font-weight:600;border:none;border-radius:6px;cursor:pointer;" class="bg-accent text-white">Queries</button>
-                <button id="btnNews" onclick="setDataType('news')" style="padding:4px 10px;font-size:12px;font-weight:600;border:none;border-radius:6px;cursor:pointer;" class="bg-dark-700 text-slate-400">News</button>
+    <!-- Controls -->
+    <div style="background:#1e293b;border-bottom:1px solid #334155;padding:8px 16px;flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div style="display:flex;background:#334155;border-radius:8px;padding:2px;">
+                <button id="btnQueries" class="btn-blue" style="padding:4px 10px;font-size:12px;border-radius:6px;">Queries</button>
+                <button id="btnNews" style="padding:4px 10px;font-size:12px;border-radius:6px;background:transparent;color:#94a3b8;border:none;cursor:pointer;font-weight:600;">News</button>
             </div>
-
             <select id="periodSelect" style="background:#334155;color:#e2e8f0;font-size:12px;border-radius:8px;padding:4px 8px;border:1px solid #475569;">
                 <option value="1">Today</option>
                 <option value="3">3 Days</option>
                 <option value="7">Week</option>
             </select>
-
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;">
                 <input type="checkbox" id="translateCheck" style="width:16px;height:16px;">
                 <span style="font-size:12px;color:#cbd5e1;font-weight:500;white-space:nowrap;">Translate to Russian</span>
             </label>
-
-            <button id="refreshBtn" onclick="refresh()" style="margin-left:auto;display:flex;align-items:center;gap:6px;background:#3b82f6;color:white;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;border:none;cursor:pointer;">
+            <button id="refreshBtn" class="btn-blue" style="margin-left:auto;padding:6px 12px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:6px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 Refresh
             </button>
         </div>
-        <div id="infoRow" style="margin-top:6px;font-size:12px;color:#64748b;">
+        <div style="margin-top:6px;font-size:12px;color:#64748b;">
             <span id="statsText"></span>
         </div>
     </div>
 
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(15,23,42,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;">
+    <div id="loadingOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(15,23,42,0.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:90;">
         <div class="spinner" style="margin-bottom:12px;"></div>
-        <p id="loadingText" style="font-size:14px;color:#94a3b8;">Fetching trends...</p>
-        <button onclick="hideLoading()" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;padding:8px;">
+        <p id="loadingText" style="font-size:14px;color:#94a3b8;margin:0;">Loading...</p>
+        <button id="loadingCloseBtn" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;padding:8px;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;">
+        <div style="position:absolute;bottom:0;left:0;right:0;background:#1e293b;border-radius:16px 16px 0 0;padding:20px 20px 32px 20px;max-width:480px;margin:0 auto;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                <h2 style="font-size:16px;font-weight:700;margin:0;">Settings</h2>
+                <button id="settingsCloseBtn" class="btn-ghost">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <label style="display:block;margin-bottom:16px;">
+                <span style="font-size:12px;color:#94a3b8;font-weight:500;display:block;margin-bottom:6px;">Cloudflare Worker URL</span>
+                <input type="url" id="workerUrlInput" placeholder="https://your-worker.workers.dev"
+                    style="width:100%;background:#334155;color:#e2e8f0;font-size:14px;border-radius:8px;padding:10px 12px;border:1px solid #475569;outline:none;">
+                <span style="font-size:11px;color:#64748b;margin-top:4px;display:block;">Deploy worker from worker.js, paste URL here, press Save.</span>
+            </label>
+            <button id="settingsSaveBtn" class="btn-blue" style="width:100%;padding:12px;border-radius:8px;font-size:14px;">Save</button>
+        </div>
     </div>
 
     <!-- Main Content -->
@@ -99,14 +99,13 @@
             <div id="topicList"></div>
             <div id="emptyState" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:#64748b;">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.5" style="margin-bottom:12px;"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                <p style="font-size:14px;">Tap Refresh to load trends</p>
+                <p style="font-size:14px;margin:0;">Tap Refresh to load trends</p>
             </div>
         </div>
-
-        <div id="tabDetails" style="flex:1;overflow-y:auto;display:none;" class="fade-in">
+        <div id="tabDetails" class="hidden" style="flex:1;overflow-y:auto;">
             <div id="detailContent" style="padding:16px;">
                 <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:#64748b;">
-                    <p style="font-size:14px;">Select a topic from the list</p>
+                    <p style="font-size:14px;margin:0;">Select a topic from the list</p>
                 </div>
             </div>
         </div>
@@ -114,42 +113,16 @@
 
     <!-- Bottom Tab Bar -->
     <nav style="background:#1e293b;border-top:1px solid #334155;display:flex;flex-shrink:0;" class="safe-bottom">
-        <button onclick="switchTab('table')" id="tabBtnTable" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:8px;border:none;background:none;cursor:pointer;" class="tab-active">
+        <button id="tabBtnTable" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:8px;border:none;background:none;cursor:pointer;color:#3b82f6;border-top:2px solid #3b82f6;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-            <span style="font-size:10px;margin-top:2px;font-weight:500;">Topics</span>
+            <span style="font-size:10px;margin-top:2px;">Topics</span>
         </button>
-        <button onclick="switchTab('details')" id="tabBtnDetails" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:8px;border:none;background:none;cursor:pointer;" class="tab-inactive">
+        <button id="tabBtnDetails" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:8px;border:none;background:none;cursor:pointer;color:#94a3b8;border-top:2px solid transparent;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <span style="font-size:10px;margin-top:2px;font-weight:500;">Details</span>
+            <span style="font-size:10px;margin-top:2px;">Details</span>
         </button>
     </nav>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;justify-content:center;z-index:100;">
-        <div style="background:#1e293b;border-radius:16px 16px 0 0;width:100%;max-width:480px;padding:20px 20px 32px 20px;" class="safe-bottom">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                <h2 style="font-size:16px;font-weight:700;color:#e2e8f0;margin:0;">Settings</h2>
-                <button onclick="closeSettings()" style="background:none;border:none;cursor:pointer;padding:4px;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            <label style="display:block;margin-bottom:12px;">
-                <span style="font-size:12px;color:#94a3b8;font-weight:500;display:block;margin-bottom:4px;">Cloudflare Worker URL</span>
-                <input type="url" id="workerUrlInput" placeholder="https://your-worker.workers.dev"
-                    style="width:100%;background:#334155;color:#e2e8f0;font-size:14px;border-radius:8px;padding:10px 12px;border:1px solid #475569;box-sizing:border-box;outline:none;">
-                <span style="font-size:11px;color:#64748b;margin-top:4px;display:block;">Deploy worker from worker.js, paste URL here, press Save.</span>
-            </label>
-            <button onclick="saveSettings()" style="width:100%;background:#3b82f6;color:white;font-size:14px;font-weight:700;padding:12px;border:none;border-radius:8px;cursor:pointer;">
-                Save
-            </button>
-        </div>
-    </div>
-
     <script src="app.js"></script>
-    <script>
-        document.getElementById('settingsBtn').addEventListener('click', function() {
-            if (typeof openSettings === 'function') openSettings();
-        });
-    </script>
 </body>
 </html>
