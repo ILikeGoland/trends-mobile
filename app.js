@@ -128,41 +128,137 @@
     }
 
     // ─── Translation ─────────────────────────────────────────────────────
-    async function translateSingle(text) {
+    var GEO_LANG = {
+        US:'en', // USA
+        GB:'en', // United Kingdom
+        AU:'en', // Australia
+        IN:'en', // India
+        CA:'en', // Canada
+        DE:'de', // Germany
+        FR:'fr', // France
+        IT:'it', // Italy
+        ES:'es', // Spain
+        MX:'es', // Mexico
+        BR:'pt', // Brazil
+        RU:'ru', // Russia
+        JP:'ja', // Japan
+        KR:'ko', // South Korea
+        CN:'zh', // China
+        ID:'id', // Indonesia
+        PL:'pl', // Poland
+        SA:'ar', // Saudi Arabia
+        NL:'nl', // Netherlands
+        TR:'tr', // Turkey
+        UA:'uk', // Ukraine
+        CZ:'cs', // Czech Republic
+        SK:'sk', // Slovakia
+        RO:'ro', // Romania
+        BG:'bg', // Bulgaria
+        HR:'hr', // Croatia
+        RS:'sr', // Serbia
+        SI:'sl', // Slovenia
+        BA:'bs', // Bosnia and Herzegovina
+        ME:'sr', // Montenegro
+        MK:'mk', // North Macedonia
+        AL:'sq', // Albania
+        EE:'et', // Estonia
+        LV:'lv', // Latvia
+        LT:'lt', // Lithuania
+        BY:'be', // Belarus
+        HU:'hu', // Hungary
+        TH:'th', // Thailand
+        VN:'vi', // Vietnam
+        PH:'tl', // Philippines
+        MY:'ms', // Malaysia
+        BD:'bn', // Bangladesh
+        PK:'ur', // Pakistan
+        LK:'si', // Sri Lanka
+        NP:'ne', // Nepal
+        MM:'my', // Myanmar
+        KH:'km', // Cambodia
+        LA:'lo', // Laos
+        MN:'mn', // Mongolia
+        KZ:'kk', // Kazakhstan
+        UZ:'uz', // Uzbekistan
+        KG:'ky', // Kyrgyzstan
+        TJ:'tg', // Tajikistan
+        TM:'tk', // Turkmenistan
+        GE:'ka', // Georgia
+        AM:'hy', // Armenia
+        AZ:'az', // Azerbaijan
+        IL:'he', // Israel
+        AE:'ar', // UAE
+        QA:'ar', // Qatar
+        KW:'ar', // Kuwait
+        OM:'ar', // Oman
+        BH:'ar', // Bahrain
+        JO:'ar', // Jordan
+        LB:'ar', // Lebanon
+        IQ:'ar', // Iraq
+        IR:'fa', // Iran
+    };
+
+    var GEO_NAMES = {
+        US:'USA', GB:'UK', AU:'Australia', IN:'India', CA:'Canada',
+        DE:'Germany', FR:'France', IT:'Italy', ES:'Spain', MX:'Mexico',
+        BR:'Brazil', RU:'Russia', JP:'Japan', KR:'South Korea', CN:'China',
+        ID:'Indonesia', PL:'Poland', SA:'Saudi Arabia', NL:'Netherlands', TR:'Turkey',
+        UA:'Ukraine', CZ:'Czechia', SK:'Slovakia', RO:'Romania', BG:'Bulgaria',
+        HR:'Croatia', RS:'Serbia', SI:'Slovenia', BA:'Bosnia', ME:'Montenegro',
+        MK:'N. Macedonia', AL:'Albania', EE:'Estonia', LV:'Latvia', LT:'Lithuania',
+        BY:'Belarus', HU:'Hungary', TH:'Thailand', VN:'Vietnam', PH:'Philippines',
+        MY:'Malaysia', BD:'Bangladesh', PK:'Pakistan', LK:'Sri Lanka', NP:'Nepal',
+        MM:'Myanmar', KH:'Cambodia', LA:'Laos', MN:'Mongolia', KZ:'Kazakhstan',
+        UZ:'Uzbekistan', KG:'Kyrgyzstan', TJ:'Tajikistan', TM:'Turkmenistan',
+        GE:'Georgia', AM:'Armenia', AZ:'Azerbaijan', IL:'Israel', AE:'UAE',
+        QA:'Qatar', KW:'Kuwait', OM:'Oman', BH:'Bahrain', JO:'Jordan',
+        LB:'Lebanon', IQ:'Iraq', IR:'Iran',
+    };
+
+    async function translateSingle(text, lang) {
         if (!text || hasCyrillic(text)) return text;
         if (translationCache[text]) return translationCache[text];
-        try {
-            const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=en|ru';
-            const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
-            if (!resp.ok) return text;
-            const data = await resp.json();
-            if (data.responseStatus && data.responseStatus !== 200) return text;
-            var result = (data.responseData && data.responseData.translatedText) || text;
-            if (result && result.toUpperCase() !== text.toUpperCase() && result.indexOf('INVALID') === -1 && result.indexOf('AUTO') === -1) {
-                translationCache[text] = result;
-                return result;
-            }
-        } catch (e) { console.warn('[v9] translate error:', e); }
+        var src = lang || 'en';
+        var pairs = [src + '|ru'];
+        if (src !== 'en') pairs.push('en|ru');
+        for (var pi = 0; pi < pairs.length; pi++) {
+            try {
+                var url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=' + pairs[pi];
+                var resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+                if (!resp.ok) continue;
+                var data = await resp.json();
+                if (data.responseStatus && data.responseStatus !== 200) continue;
+                var result = (data.responseData && data.responseData.translatedText) || text;
+                if (result && result.toUpperCase() !== text.toUpperCase() && result.indexOf('INVALID') === -1 && result.indexOf('AUTO') === -1) {
+                    translationCache[text] = result;
+                    return result;
+                }
+            } catch (e) { console.warn('[v10] translate error:', e); }
+        }
         return text;
     }
 
-    async function translateBatch(texts) {
+    async function translateBatch(texts, geos) {
         if (!texts.length) return texts;
-        const toTranslate = [];
-        const indices = [];
-        const results = [...texts];
-        for (let i = 0; i < texts.length; i++) {
+        var toTranslate = [];
+        var indices = [];
+        var results = [...texts];
+        for (var i = 0; i < texts.length; i++) {
             if (!texts[i] || hasCyrillic(texts[i])) continue;
             if (translationCache[texts[i]]) { results[i] = translationCache[texts[i]]; }
             else { toTranslate.push(texts[i]); indices.push(i); }
         }
         if (!toTranslate.length) return results;
-        const translated = await Promise.all(toTranslate.map(t => translateSingle(t)));
-        for (let i = 0; i < indices.length; i++) { results[indices[i]] = translated[i]; }
+        var tasks = toTranslate.map(function (t, j) {
+            var g = (geos && geos[indices[j]]) || '';
+            return translateSingle(t, GEO_LANG[g] || 'en');
+        });
+        var translated = await Promise.all(tasks);
+        for (var k = 0; k < indices.length; k++) { results[indices[k]] = translated[k]; }
         return results;
     }
 
-    async function translateBatchCached(texts) {
+    async function translateBatchCached(texts, geos) {
         const toTranslate = [], indices = [], results = [...texts];
         for (let i = 0; i < texts.length; i++) {
             if (!texts[i] || hasCyrillic(texts[i])) continue;
@@ -170,7 +266,8 @@
             else { toTranslate.push(texts[i]); indices.push(i); }
         }
         if (toTranslate.length) {
-            const translated = await translateBatch(toTranslate);
+            const subGeos = geos ? indices.map(i => geos[i]) : null;
+            const translated = await translateBatch(toTranslate, subGeos);
             for (let j = 0; j < indices.length; j++) {
                 if (translated[j] !== toTranslate[j]) translationCache[toTranslate[j]] = translated[j];
                 results[indices[j]] = translated[j];
@@ -212,7 +309,7 @@
         if (total === 0) {
             const fb = await fetchFallbackFeeds(500);
             if (fb.items.length) {
-                if (translate) { const o = fb.items.map(i => i.original); const t = await translateBatchCached(o); fb.items.forEach((it, i) => { it.query = t[i]; }); }
+                if (translate) { const o = fb.items.map(i => i.original); const g = fb.items.map(i => i.geo); const t = await translateBatchCached(o, g); fb.items.forEach((it, i) => { it.query = t[i]; }); }
                 else fb.items.forEach(it => { it.query = it.original; });
                 return { topics: fb.items, source: fb.source, geoCounts: {} };
             }
@@ -229,7 +326,7 @@
             }
             if (items.length >= 500) break;
         }
-        if (translate) { const o = items.map(i => i.original); const t = await translateBatchCached(o); items.forEach((it, i) => { it.query = t[i]; }); }
+        if (translate) { const o = items.map(i => i.original); const g = items.map(i => i.geo); const t = await translateBatchCached(o, g); items.forEach((it, i) => { it.query = t[i]; }); }
         return { topics: items, source: null, geoCounts };
     }
 
@@ -242,7 +339,7 @@
         if (total === 0) {
             const fb = await fetchFallbackFeeds(500);
             if (fb.items.length) {
-                if (translate) { const o = fb.items.map(i => i.original); const t = await translateBatchCached(o); fb.items.forEach((it, i) => { it.query = t[i]; }); }
+                if (translate) { const o = fb.items.map(i => i.original); const g = fb.items.map(i => i.geo); const t = await translateBatchCached(o, g); fb.items.forEach((it, i) => { it.query = t[i]; }); }
                 else fb.items.forEach(it => { it.query = it.original; });
                 return { topics: fb.items, source: fb.source, geoCounts: {} };
             }
@@ -259,7 +356,7 @@
             }
             if (items.length >= 500) break;
         }
-        if (translate) { const o = items.map(i => i.original); const t = await translateBatchCached(o); items.forEach((it, i) => { it.query = t[i]; }); }
+        if (translate) { const o = items.map(i => i.original); const g = items.map(i => i.geo); const t = await translateBatchCached(o, g); items.forEach((it, i) => { it.query = t[i]; }); }
         return { topics: items, source: null, geoCounts };
     }
 
@@ -299,7 +396,8 @@
 
         if (doTranslate) {
             const allOriginals = displayTopics.flatMap(t => t.items.slice(0, 3).map(i => i.original));
-            const translated = await translateBatchCached(allOriginals);
+            const allGeos = displayTopics.flatMap(t => t.items.slice(0, 3).map(i => i.geo));
+            const translated = await translateBatchCached(allOriginals, allGeos);
             let offset = 0;
             displayTopics.forEach(t => { const c = Math.min(t.items.length, 3); t._displayRep = translated.slice(offset, offset + c); offset += c; });
         } else {
@@ -318,7 +416,7 @@
                 + '<span style="font-size:10px;color:#64748b;">' + topic.items.length + ' items</span>'
                 + '</div></div>'
                 + '<div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;">'
-                + topic.geos.slice(0, 4).map(g => '<span style="font-size:12px;background:#334155;color:#94a3b8;padding:2px 8px;border-radius:9999px;">' + g + '</span>').join('')
+                + topic.geos.slice(0, 4).map(g => '<span style="font-size:12px;background:#334155;color:#94a3b8;padding:2px 8px;border-radius:9999px;">' + g + (GEO_NAMES[g] ? ' · ' + GEO_NAMES[g] : '') + '</span>').join('')
                 + '</div>';
             div.addEventListener('click', function () { selectTopic(idx); });
             topicList.appendChild(div);
@@ -336,9 +434,9 @@
         const topic = allTopics[topicIdx];
         const doTranslate = translateCheck.checked;
         let displayItems = topic.items.map(i => i.query || i.original);
-        if (doTranslate) { displayItems = await translateBatchCached(topic.items.map(i => i.original)); }
+        if (doTranslate) { displayItems = await translateBatchCached(topic.items.map(i => i.original), topic.items.map(i => i.geo)); }
 
-        const geoChips = topic.geos.map(g => '<span style="font-size:12px;background:rgba(59,130,246,0.15);color:#60a5fa;padding:2px 8px;border-radius:9999px;">' + g + '</span>').join('');
+        const geoChips = topic.geos.map(g => '<span style="font-size:12px;background:rgba(59,130,246,0.15);color:#60a5fa;padding:2px 8px;border-radius:9999px;">' + g + (GEO_NAMES[g] ? ' · ' + GEO_NAMES[g] : '') + '</span>').join('');
         const itemsHtml = displayItems.map((item, i) => '<div style="padding:8px 12px;background:rgba(51,65,85,0.5);border-radius:8px;margin-bottom:6px;">'
             + '<span style="font-size:10px;color:#64748b;font-family:monospace;margin-right:6px;">' + (i + 1) + '.</span>'
             + '<span style="font-size:14px;color:#e2e8f0;">' + item + '</span>'
