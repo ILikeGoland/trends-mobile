@@ -132,7 +132,7 @@
         if (!text || hasCyrillic(text)) return text;
         if (translationCache[text]) return translationCache[text];
         try {
-            const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=auto|ru';
+            const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=en|ru';
             const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
             if (!resp.ok) return text;
             const data = await resp.json();
